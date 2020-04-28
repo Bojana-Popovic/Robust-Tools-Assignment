@@ -1,0 +1,306 @@
+---
+title: "SOCIAL MEDIA AND WELLBEING"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+runtime: shiny
+---
+
+```{r CSS for Colours}
+# CSS is added below for the customisation of colours for flexdashboard headers and shinyWidgets button and slider colours. 
+```
+
+<style>                     
+.navbar {
+  background-color: #5CA3F3;
+  border: none;
+}
+
+.btn-lightblue {
+  color: #FFFFFF;
+  background-color: #5CA3F3
+}
+
+.btn-lightblue.active {
+  background-color: #1967be
+}
+
+.irs-bar {
+    border-color: #FFFFFF;
+    background-color: 5CA3F3;
+}
+
+.irs-from, .irs-to, .irs-single {
+    color: #FFFFFF;
+    background: #1967be;
+}
+
+.chart-title {
+    color: #FFFFFF;
+    background-color: #1967be;
+}
+</style>
+
+```{r Setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(shinyWidgets)
+library(ggpubr)   
+library(shiny)
+```
+
+```{r Dataload}
+PD_original <- read_csv(file = "proj_data.csv")
+```
+
+```{r context="setup"}
+
+####Data cleanup#### 
+
+final_data <- PD_original %>%                                    
+  rename(
+    Animals = Condition_Animals,
+    Control = Condition_Control,
+    Luxury = Condition_Luxury,
+    Memes = Condition_Memes,
+    Positive_Affect = PositiveAffect,
+    Negative_Affect = NegativeAffect,
+    Life_Satisfaction = LifeSatisfaction5
+    ) %>%
+  filter(!is.na(SWB)) %>% 
+  select(-Finished, -Attrite) %>%
+  mutate(
+    Condition = factor(
+      Condition, 
+      levels = c(
+        "Control",
+        "Animals",
+        "Luxury",
+        "Memes")
+      ))
+
+####Data Preparation####
+
+Reactive <- reactive({   
+  FD2 <- final_data %>%          
+         filter(
+           Condition == "Control" |      
+           Condition %in% input$cond,
+           Time_Images > input$time[1],
+           Time_Images < input$time[2]) 
+  })
+
+TT <- final_data %>% 
+  filter(Time_Images >= 5)
+
+####Boxplot functions####
+
+pal <- c("#F8EE5C","#F9CA74","#FFA500","#FC8B03")
+
+BoxPlot <- function(y_axis){
+    ggplot(
+      data = Reactive(), 
+      mapping = aes_string(
+        x = "Condition",
+        y = y_axis,
+        fill = "Condition"
+        )) +
+    geom_boxplot(
+      na.rm = TRUE
+      ) + 
+    theme_minimal() + 
+    scale_fill_manual(
+      values = pal,
+      guide = "none") +
+    labs(
+      x = NULL, 
+      y = "Score") +
+    theme(
+      axis.text = element_text(face = "bold"), 
+      axis.title = element_text(face = "bold")) +  
+    ylim(1,5)
+}
+
+BoxPlot_inf <- function(y_axis){
+    ggplot(
+      data = TT, 
+      mapping = aes_string(          
+        x = "Condition",
+        y = y_axis
+        )) +
+    geom_boxplot(
+      fill = pal,
+      na.rm = TRUE) + 
+    theme_minimal() +
+    labs(
+      x = NULL, 
+      y = "Score") +
+    theme(
+      axis.text = element_text(face = "bold"), 
+      axis.title = element_text(face = "bold")) +
+    stat_compare_means(
+      label = "p.signif",
+      method = "t.test",
+      ref.group = "Control",
+      label.y = 5.2,
+      na.rm = TRUE) 
+}
+```        
+         
+Descriptive Statistics 
+=====================================
+
+Row {data-height=150}
+-----------------------------------------------------------------------
+```{r Button & Slider, context="render"}
+checkboxGroupButtons(
+   inputId = "cond",
+   label = "Conditions",
+   status = "lightblue",
+   choices = c(
+     "Luxury",
+     "Animals",
+     "Memes"),   
+   selected = c(
+     "Luxury",
+     "Animals",
+     "Memes"),
+   individual = TRUE,
+   width = "300px"
+)
+
+sliderInput(
+  inputId = "time",                         
+  label = "Time (secs)",
+  min = 0, 
+  max = 1600,
+  value = c(0, 1600),
+  ticks = FALSE,
+  width = "400px"
+  )
+```
+
+Row 
+-----------------------------------------------------------------------
+
+### **Positive Affect**
+```{r, context="render"}
+plotOutput("PA")
+```
+
+```{r, context="server"}
+output$PA <- renderPlot({
+  BoxPlot("Positive_Affect")
+})
+```
+
+
+### **Negative Affect**
+```{r, context="render"}
+plotOutput("Neg")
+```
+
+```{r, context="server"}
+output$Neg <- renderPlot({
+  BoxPlot("Negative_Affect")
+})
+```
+
+
+Row 
+-----------------------------------------------------------------------
+
+### **Life Satisfaction**
+```{r, context="render"}
+plotOutput("LS")
+```
+
+```{r, context="server"}
+output$LS <- renderPlot({
+  BoxPlot("Life_Satisfaction")
+})
+```
+
+
+### **Subjective Well-Being**
+```{r, context="render"}
+plotOutput("SWB")
+```
+
+```{r, context="server"}
+output$SWB <- renderPlot({
+  BoxPlot("SWB")
+})
+```
+
+Inferential Statistics
+=====================================
+
+Row 
+-----------------------------------------------------------------------
+### Positive Affect
+```{r, context="render"}
+plotOutput("PA_stat")
+```
+
+```{r, context="server"}
+
+output$PA_stat <- renderPlot({
+BoxPlot_inf("Positive_Affect")
+})
+```
+
+
+### Negative Affect
+```{r, context="render"}
+plotOutput("NA_stat")
+```
+
+```{r, context="server"}
+output$NA_stat <- renderPlot({
+BoxPlot_inf("Negative_Affect")
+})
+```
+
+Row 
+-----------------------------------------------------------------------
+
+### Life Satisfaction
+```{r, context="render"}
+plotOutput("LS_stat")
+```
+
+```{r, context="server"}
+output$LS_stat <- renderPlot({
+BoxPlot_inf("Life_Satisfaction")
+})
+```
+
+
+### Subjective Well-Being
+```{r, context="render"}
+plotOutput("SWB_stat")
+```
+
+```{r, context="server"}
+output$SWB_stat <- renderPlot({
+BoxPlot_inf("SWB")
+})
+```
+
+Row {data-height=20}
+-----------------------------------------------------------------------
+**NOTE:**
+
+Row {data-height=20}
+-----------------------------------------------------------------------
+Comparisons were made between the Control condition and each of the social media conditions (Animals, Luxury, Memes). The significance of each comparison is labelled above the respective social media condition. 
+
+Row {data-height=20}
+-----------------------------------------------------------------------
+**ns**   p > 0.05
+
+Row {data-height=20}
+-----------------------------------------------------------------------
+**\*\***   p <= 0.01

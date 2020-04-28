@@ -1,0 +1,10 @@
+---
+title: "Purpose of Github and changes to original proposal"
+output: html_document
+---
+
+Originally I was only going to run t-tests on some subset of the data, visualise these t-tests using `ggplot` and then document all of this on Github. However, after taking a closer look at the data I realised that the researchers made a number of comparisons and that certain variables (eg time) influenced these comparisons. So I decided that the best way to show the breadth of these comparisons was to create a dashboard using the `flexdashboard` package. I think using this is useful when you run many comparisons on your dataset and you want to visualise them in a grouped space or if there are interactive variables that you'd like to show the effects of on your data means. 
+
+Additionally, I changed the purpose of the Github repository to be less a documentation/ journal style of what I did and more a *tutorial* style that is meant to teach others how to create a flexdashboard. 
+
+Also my 'bibliography' is included as embedded text in the Github README file.
