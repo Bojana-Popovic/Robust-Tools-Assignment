@@ -288,6 +288,7 @@ output$PA <- renderPlot({      # We are choosing to render a plot hence renderPl
 })
 ```
 This process is repeated for as many plots as you'd like to have.
+
 Negative Affect
 ```
 {r, context="render"}
